@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Виправити розкладку з англ.</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- Bootstrap Icons (for Sun and Moon icons) -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons/font/bootstrap-icons.css" rel="stylesheet">
+    {% load static %}
+    <script src="{% static 'scripts.js' %}"></script>
+    <link href="{% static 'style.css' %}" rel="stylesheet">
+</head>
+<body>
+<!-- Container -->
+<div class="container">
+    <!-- Page Header with Theme Toggle -->
+    <div id="headTitleAndSwitch" class="d-flex justify-content-between transparent-glass align-items-center my-4">
+        <h1 id="pageTitle" class="text-primary">Виправити розкладку з англ. </h1>
+        <div class="form-check form-switch">
+            <label id="labelToggle" for="flexSwitchCheckDefault">Темна</label>
+            <input id="flexSwitchCheckDefault" title="Увімкніть нічний режим"
+                   onclick="toggleTheme()" class="form-check-input"
+                   type="checkbox" role="switch">
+            <i id="themeToggleIcon" class="bi bi-sun-fill" title="Увімкніть нічний режим" onclick="toggleTheme()"
+               aria-hidden="true"></i>
+        </div>
+    </div>
+
+    <div class="card shadow transparent-glass">
+        <div class="card-body">
+            <div class="snowflake" style="--fall-duration: 6.5s; --sway-duration: 4s; --size: 10px;"></div>
+            {% csrf_token %}
+            <!-- Responsive Grid Layout for Textareas -->
+            <div class="row">
+                <!-- Input Text -->
+                <div class="col-12 col-lg-6 mb-3">
+                    <label for="inputText" class="form-label fw-semibold">Введіть неправильний текст:</label>
+                    <button id="btnClearInput" class="btn btn-outline-danger clear-btn" title="Очистити поле">
+                        <i class="bi bi-x-circle"></i>
+                    </button>
+                    <textarea id="inputText" class="form-control transparent-glass" rows="6"
+                              placeholder="Вставте сюди" oninput="transliterateText();"></textarea>
+                    <button id="btnPaste" class="btn-12"><span>Тисни!</span><span>Вставити</span></button>
+                </div>
+
+                <!-- Output Text -->
+                <div class="col-12 col-lg-6 mb-3">
+                    <label for="outputText" class="form-label fw-semibold">Отримайте правильний текст:</label>
+                    <select name="language" id="language">
+                        <option value="ua">UA</option>
+                        <option value="ru">RU</option>
+                    </select>
+                    <textarea id="outputText" class="form-control transparent-glass" rows="6"
+                              placeholder="Тут буде правильний текст" readonly></textarea>
+                    <button id="btnCopy" class="btn-12"><span>Тисни!</span><span>Скопіювати</span></button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="toast-container position-fixed bottom-0 end-0 p-3">
+        <div id="liveToast" class="toast" role="alert" aria-live="assertive" aria-atomic="true">
+            <div class="toast-header">
+                <div id="rnd-blue" class="rounded me-2"></div>
+                <strong class="me-auto">Увага!</strong>
+                <small>Щойно</small>
+                <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
+            </div>
+            <div class="toast-body">
+                Текст скопійовано до буферу.
+            </div>
+        </div>
+    </div>
+</div>
+</body>
+</html>

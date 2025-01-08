@@ -1,0 +1,44 @@
+{% load humanize %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Employee List</title>
+        <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</head>
+<header class="bg-primary text-white text-center py-3">
+    <h1>My Django Application</h1>
+    <p class="lead">Employee Management System</p>
+</header>
+<body class="bg-light">
+    <div class="container mt-5">
+        <h1 class="text-center mb-4">Employee List</h1>
+        <a href="/add-employee/" class="btn btn-success mb-3">Add New Employee</a>
+        <table class="table table-hover table-bordered">
+            <thead class="table-dark">
+                <tr>
+                    <th>#</th>
+                    <th>First Name</th>
+                    <th>Last Name</th>
+                    <th>Salary</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for employee in employees %}
+                <tr class="{% if employee.salary > 15000 %}table-warning{% endif %}">
+                    <td>{{ forloop.counter }}</td> <!-- Auto increments row number -->
+                    <td>{{ employee.first_name }}</td>
+                    <td>{{ employee.last_name }}</td>
+                    <td>${{ employee.salary|floatformat:0|intcomma}}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</body>
+<footer class="bg-dark text-center text-white py-3 mt-5">
+    <p>&copy; {{ year }} My Django App. All rights reserved.</p>
+</footer>
+</html>
