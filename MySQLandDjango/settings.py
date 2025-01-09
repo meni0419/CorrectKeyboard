@@ -9,8 +9,11 @@ https://docs.djangoproject.com/en/5.1/topics/settings/
 For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.1/ref/settings/
 """
-from decouple import config
 from pathlib import Path
+from custom_funcs import read_env
+import pymysql
+
+pymysql.install_as_MySQLdb()
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -19,12 +22,12 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/5.1/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = config('SECRET_KEY')
+SECRET_KEY = read_env('SECRET_KEY')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = config('DEBUG', cast=bool)
+DEBUG = read_env('DEBUG', cast=bool)
 
-ALLOWED_HOSTS = config('ALLOWED_HOSTS', default='').split(',')
+ALLOWED_HOSTS = read_env('ALLOWED_HOSTS', default='').split(',')
 
 # Application definition
 
@@ -75,12 +78,12 @@ WSGI_APPLICATION = 'MySQLandDjango.wsgi.application'
 
 DATABASES = {
     'default': {
-        'ENGINE': config('DATABASE_ENGINE'),
-        'NAME': config('DATABASE_NAME'),
-        'USER': config('DATABASE_USER'),
-        'PASSWORD': config('DATABASE_PASSWORD'),
-        'HOST': config('DATABASE_HOST'),
-        'PORT': config('DATABASE_PORT'),
+        'ENGINE': read_env('DATABASE_ENGINE'),
+        'NAME': read_env('DATABASE_NAME'),
+        'USER': read_env('DATABASE_USER'),
+        'PASSWORD': read_env('DATABASE_PASSWORD'),
+        'HOST': read_env('DATABASE_HOST'),
+        'PORT': read_env('DATABASE_PORT'),
     }
 }
 
