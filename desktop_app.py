@@ -1,21 +1,14 @@
 import configparser
 import os
 import sys
-import django
 import pyperclip
 from time import sleep
 from pynput import keyboard
 from pynput.keyboard import Controller, Key
-
-os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'MySQLandDjango.settings')
-django.setup()
-
-from employees.views import transliterate_ua_text, transliterate_ru_text
-from PyQt5.QtWidgets import QApplication, QWidget, QVBoxLayout, QLabel, QTextEdit, QPushButton, QComboBox, \
-    QMessageBox, QHBoxLayout, QDialog, QLineEdit, QSystemTrayIcon, QMenu, QAction
 from PyQt5.QtGui import QIcon
 from PyQt5.QtCore import Qt
-from typing import TextIO
+from PyQt5.QtWidgets import QApplication, QWidget, QVBoxLayout, QLabel, QTextEdit, QPushButton, QComboBox, \
+    QMessageBox, QHBoxLayout, QDialog, QLineEdit, QSystemTrayIcon, QMenu, QAction
 
 LIGHT_THEME = """
 QWidget {
@@ -115,16 +108,151 @@ QComboBox:hover {
 
 CONFIG_FILE = "config.ini"
 
+# Create the translation table *outside* the function, only once
+UA_TRANSLATION_TABLE = str.maketrans({
+    "q": "й", "w": "ц", "e": "у", "r": "к", "t": "е", "y": "н", "u": "г", "i": "ш", "o": "щ", "p": "з",
+    "[": "х", "]": "ї", "a": "ф", "s": "і", "d": "в", "f": "а", "g": "п", "h": "р", "j": "о", "k": "л",
+    "l": "д", ";": "ж", "'": "є", "\\": "ґ", "z": "я", "x": "ч", "c": "с", "v": "м", "b": "и", "n": "т",
+    "m": "ь", ",": "б", ".": "ю", "Q": "Й", "W": "Ц", "E": "У", "R": "К", "T": "Е", "Y": "Н", "U": "Г",
+    "I": "Ш", "O": "Щ", "P": "З", "{": "Х", "}": "Ї", "A": "Ф", "S": "І", "D": "В", "F": "А", "G": "П",
+    "H": "Р", "J": "О", "K": "Л", "L": "Д", ":": "Ж", "\"": "Є", "|": "Ґ", "Z": "Я", "X": "Ч", "C": "С",
+    "V": "М", "B": "И", "N": "Т", "M": "Ь", "<": "Б", ">": "Ю", "@": "\"", "#": "№", "$": ";", "^": ":",
+    "?": ",", "/": "."
+})
+
+RU_TRANSLATION_TABLE = str.maketrans({
+    "q": "й", "w": "ц", "e": "у", "r": "к", "t": "е", "y": "н", "u": "г", "i": "ш", "o": "щ", "p": "з",
+    "[": "х", "]": "ъ", "a": "ф", "s": "ы", "d": "в", "f": "а", "g": "п", "h": "р", "j": "о", "k": "л",
+    "l": "д", ";": "ж", "'": "э", "z": "я", "x": "ч", "c": "с", "v": "м", "b": "и", "n": "т", "m": "ь",
+    ",": "б", ".": "ю", "Q": "Й", "W": "Ц", "E": "У", "R": "К", "T": "Е", "Y": "Н", "U": "Г", "I": "Ш",
+    "O": "Щ", "P": "З", "{": "Х", "}": "Ъ", "A": "Ф", "S": "Ы", "D": "В", "F": "А", "G": "П", "H": "Р",
+    "J": "О", "K": "Л", "L": "Д", ":": "Ж", "\"": "Э", "Z": "Я", "X": "Ч", "C": "С", "V": "М", "B": "И",
+    "N": "Т", "M": "Ь", "<": "Б", ">": "Ю", "@": "\"", "#": "№", "$": ";", "^": ":", "?": ",", "/": "."
+})
+
+EN_TRANSLATION_TABLE = str.maketrans({
+    "й": "q", "ц": "w", "у": "e", "к": "r", "е": "t", "н": "y", "г": "u", "ш": "i", "щ": "o", "з": "p",
+    "х": "[", "ъ": "]", "ї": "]", "ф": "a", "ы": "s", "і": "s", "в": "d", "а": "f", "п": "g", "р": "h",
+    "о": "j", "л": "k", "д": "l", "ж": ";", "э": "'", "є": "'", "ё": "`", "ґ": "\\", "я": "z", "ч": "x",
+    "с": "c", "м": "v", "и": "b", "т": "n", "ь": "m", "б": ",", "ю": ".", "Й": "Q", "Ц": "W", "У": "E",
+    "К": "R", "Е": "T", "Н": "Y", "Г": "U", "Ш": "I", "Щ": "O", "З": "P", "Х": "{", "Ъ": "}", "Ї": "}",
+    "Ф": "A", "Ы": "S", "І": "S", "В": "D", "А": "F", "П": "G", "Р": "H", "О": "J", "Л": "K", "Д": "L",
+    "Ж": ":", "Э": "\"", "Є": "\"", "Ё": "~", "Ґ": "|", "Я": "Z", "Ч": "X", "С": "C", "М": "V", "И": "B",
+    "Т": "N", "Ь": "M", "Б": "<", "Ю": ">", "№": "#", ";": "$", ":": "^", ",": "?", ".": "/", "@": "\"",
+    "?": ",", "/": "."
+})
+
+
+def transliterate_en_text(input_text):
+    return input_text.translate(EN_TRANSLATION_TABLE)
+
+
+def transliterate_ru_text(input_text):
+    return input_text.translate(RU_TRANSLATION_TABLE)
+
+
+def transliterate_ua_text(input_text):
+    return input_text.translate(UA_TRANSLATION_TABLE)
+
 
 def save_theme_preference(theme):
     config = configparser.ConfigParser()
     config['Preferences'] = {'theme': theme}
     with open(CONFIG_FILE, 'w') as configfile:  # Type hint configfile explicitly
-        configfile: TextIO  # Explicit type hint to satisfy type checkers
         config.write(configfile)
 
 
-def save_hotkeys(ua_hotkey: str, ru_hotkey: str):
+def transliterate_clipboard(lang="ukrainian"):
+    """
+    Reads selected text from the clipboard, transliterates it,
+    and replaces the selected text in the active application.
+    """
+    keyboard_controller = Controller()
+
+    with keyboard_controller.pressed(Key.ctrl):
+        keyboard_controller.press('c')
+        keyboard_controller.release('c')
+
+    sleep(0.5)
+    input_text = pyperclip.paste()
+
+    if not input_text.strip():
+        print("No text found in clipboard, nothing to transliterate!")
+        return
+
+    # Transliterate the text
+    if lang == "ukrainian":
+        result = transliterate_ua_text(input_text)
+    elif lang == "russian":
+        result = transliterate_ru_text(input_text)
+    elif lang == "english":
+        result = transliterate_en_text(input_text)
+    else:
+        result = input_text  # Fallback to input text if language is unknown
+
+    # Write transliterated text back to clipboard
+    pyperclip.copy(result)
+    print(f"Text replaced with: {result}")
+    # Simulate a paste using pynput
+    sleep(0.3)
+    with keyboard_controller.pressed(Key.ctrl):
+        keyboard_controller.press('v')
+        keyboard_controller.release('v')
+
+
+def get_pressed_key(event):
+    """
+    Convert a PyQt Key Event into a string representing the hotkey.
+    """
+    modifiers = event.modifiers()
+    keys = []
+
+    # Handle modifiers
+    if modifiers & Qt.AltModifier:
+        keys.append('<alt>')
+    if modifiers & Qt.ControlModifier:
+        keys.append('<ctrl>')
+    if modifiers & Qt.ShiftModifier:
+        keys.append('<shift>')
+
+    # Handle special keys and textual keys
+    key = event.key()
+    if key in [
+        Qt.Key_Delete, Qt.Key_End, Qt.Key_Home, Qt.Key_Insert,
+        Qt.Key_PageUp, Qt.Key_PageDown, Qt.Key_Backspace, Qt.Key_Tab,
+        Qt.Key_Escape, Qt.Key_Space, Qt.Key_Enter, Qt.Key_Return
+    ]:
+        # Map special keys to their human-readable names
+        special_keys = {
+            Qt.Key_Delete: '<delete>',
+            Qt.Key_End: '<end>',
+            Qt.Key_Home: '<home>',
+            Qt.Key_Insert: '<insert>',
+            Qt.Key_PageUp: '<pageup>',
+            Qt.Key_PageDown: '<page_down>',
+            Qt.Key_Backspace: '<backspace>',
+            Qt.Key_Tab: '<tab>',
+            Qt.Key_Escape: '<escape>',
+            Qt.Key_Space: '<space>',
+            Qt.Key_Enter: '<enter>',
+            Qt.Key_Return: '<return>',
+        }
+        keys.append(special_keys[key])
+    elif Qt.Key_F1 <= key <= Qt.Key_F35:
+        # Handle function keys (F1 to F35)
+        keys.append(f"f{key - Qt.Key_F1 + 1}")
+    elif Qt.Key_0 <= key <= Qt.Key_9 or Qt.Key_A <= key <= Qt.Key_Z:
+        # Handle alphanumeric keys
+        keys.append(event.text())
+    else:
+        # Fallback for unmapped keys (like Numpad keys)
+        keys.append(f"key_{key}")
+
+    # Return the hotkey combination as a string
+    return "+".join(keys).lower()
+
+
+def save_hotkeys(ua_hotkey: str, ru_hotkey: str, en_hotkey: str ):
     """
     Save the provided hotkeys for Ukrainian and Russian transliteration to the config file.
     """
@@ -137,6 +265,7 @@ def save_hotkeys(ua_hotkey: str, ru_hotkey: str):
         config['Preferences'] = {}
     config['Preferences']['ua_hotkey'] = ua_hotkey
     config['Preferences']['ru_hotkey'] = ru_hotkey
+    config['Preferences']['en_hotkey'] = en_hotkey
 
     with open(CONFIG_FILE, 'w') as configfile:
         config.write(configfile)
@@ -150,13 +279,14 @@ def load_theme_preference() -> str:
     return 'Light'
 
 
-def load_hotkeys() -> tuple[str, str]:
+def load_hotkeys() -> tuple[str, str, str]:
     config = configparser.ConfigParser()
     if config.read(CONFIG_FILE) and 'Preferences' in config:
         ua_hotkey = config['Preferences'].get('ua_hotkey', '<alt>+<delete>')  # Default for Ukrainian
         ru_hotkey = config['Preferences'].get('ru_hotkey', '<alt>+<end>')  # Default for Russian
-        return ua_hotkey, ru_hotkey
-    return '<alt>+<delete>', '<alt>+<end>'  # Default hotkeys
+        en_hotkey = config['Preferences'].get('en_hotkey', '<alt>+<page_down>')  # Default for english
+        return ua_hotkey, ru_hotkey, en_hotkey
+    return '<alt>+<delete>', '<alt>+<end>', '<alt>+<page_down>'  # Default hotkeys
 
 
 #     # Use translate to transform the input text
@@ -167,7 +297,7 @@ class TransliterationApp(QWidget):
         # For theme persistence
         self.current_theme = load_theme_preference()
         # Initialize hotkeys from saved preferences
-        self.ua_hotkey, self.ru_hotkey = load_hotkeys()
+        self.ua_hotkey, self.ru_hotkey, self.en_hotkey = load_hotkeys()
         # Define instance attributes in __init__
         self.input_text = None
         self.language_selection = None
@@ -192,7 +322,7 @@ class TransliterationApp(QWidget):
         """
         # Create a system tray icon
         self.tray_icon = QSystemTrayIcon(self)
-        self.tray_icon.setIcon(QIcon('./botico.png'))  # Use your custom icon here
+        self.tray_icon.setIcon(QIcon('static/img/botico.png'))  # Use your custom icon here
         self.tray_icon.setToolTip("Transliteration App")
 
         # Create a menu for system tray icon
@@ -241,7 +371,7 @@ class TransliterationApp(QWidget):
 
     def init_ui(self):
         self.setWindowTitle("Transliteration App")
-        self.setWindowIcon(QIcon('./botico.png'))
+        self.setWindowIcon(QIcon('static/img/botico.png'))
         self.setGeometry(300, 300, 400, 300)
 
         # Layout
@@ -315,6 +445,8 @@ class TransliterationApp(QWidget):
             result = transliterate_ua_text(input_text)
         elif language == "Russian":
             result = transliterate_ru_text(input_text)
+        elif language == "English":
+            result = transliterate_en_text(input_text)
         else:
             result = input_text
 
@@ -345,15 +477,16 @@ class TransliterationApp(QWidget):
         """
         Open a modal window to allow the user to configure hotkeys.
         """
-        settings_dialog = HotkeySettingsDialog(self.ua_hotkey, self.ru_hotkey)
+        settings_dialog = HotkeySettingsDialog(self.ua_hotkey, self.ru_hotkey, self.en_hotkey)
         if settings_dialog.exec_():  # Wait for user to press "Save" in dialog
             # Update hotkeys with the chosen values
             self.ua_hotkey = settings_dialog.get_ua_hotkey()
             self.ru_hotkey = settings_dialog.get_ru_hotkey()
+            self.en_hotkey = settings_dialog.get_en_hotkey()
             self.register_hotkeys()  # Re-register hotkeys with new values
 
             # Save the updated hotkeys to the config file
-            save_hotkeys(self.ua_hotkey, self.ru_hotkey)
+            save_hotkeys(self.ua_hotkey, self.ru_hotkey, self.en_hotkey)
 
     def switch_theme(self):
         selected_theme = self.theme_switcher.currentText()
@@ -377,70 +510,40 @@ class TransliterationApp(QWidget):
         # Validate and register hotkeys
         try:
             hotkeys_mapping = {
-                self.ua_hotkey: lambda: self.transliterate_clipboard("ukrainian"),
-                self.ru_hotkey: lambda: self.transliterate_clipboard("russian"),
+                self.ua_hotkey: lambda: transliterate_clipboard("ukrainian"),
+                self.ru_hotkey: lambda: transliterate_clipboard("russian"),
+                self.en_hotkey: lambda: transliterate_clipboard("english")
             }
             self.hotkeys_listener = keyboard.GlobalHotKeys(hotkeys_mapping)
             self.hotkeys_listener.start()  # Start listening for hotkeys
-            print(f"Hotkeys registered: Ukrainian = {self.ua_hotkey}, Russian = {self.ru_hotkey}")
+            print(f"Hotkeys registered: Ukrainian = {self.ua_hotkey}, Russian = {self.ru_hotkey}, English = {self.en_hotkey}")
         except ValueError as e:
             print(f"Invalid hotkey: {e}")
             QMessageBox.critical(self, "Hotkey Error", f"Failed to register hotkeys: {e}")
             # Provide default fallback hotkeys in case of failure
             self.ua_hotkey = '<alt>+<delete>'
             self.ru_hotkey = '<alt>+<end>'
+            self.en_hotkey = '<alt>+<page_down>'
 
             QMessageBox.information(self, "Fallback Hotkeys",
-                                    f"Fallback hotkeys applied.\nUkrainian: {self.ua_hotkey}\nRussian: {self.ru_hotkey}")
+                                    f"Fallback hotkeys applied.\nUkrainian: {self.ua_hotkey}\nRussian: {self.ru_hotkey}\nEnglish: {self.en_hotkey}")
             self.register_hotkeys()
-
-    @staticmethod
-    def transliterate_clipboard(lang="ukrainian"):
-        """
-        Reads selected text from the clipboard, transliterates it,
-        and replaces the selected text in the active application.
-        """
-        keyboard_controller = Controller()
-
-        with keyboard_controller.pressed(Key.ctrl):
-            keyboard_controller.press('x')
-            keyboard_controller.release('x')
-
-        sleep(0.5)
-        input_text = pyperclip.paste()
-
-        if not input_text.strip():
-            print("No text found in clipboard, nothing to transliterate!")
-            return
-
-        # Transliterate the text
-        if lang == "ukrainian":
-            result = transliterate_ua_text(input_text)
-        elif lang == "russian":
-            result = transliterate_ru_text(input_text)
-        else:
-            result = input_text  # Fallback to input text if language is unknown
-
-        # Write transliterated text back to clipboard
-        pyperclip.copy(result)
-        print(f"Text replaced with: {result}")
-        # Simulate a paste using pynput
-        with keyboard_controller.pressed(Key.ctrl):
-            keyboard_controller.press('v')
-            keyboard_controller.release('v')
 
 
 class HotkeySettingsDialog(QDialog):
-    def __init__(self, current_ua_hotkey, current_ru_hotkey):
+    def __init__(self, current_ua_hotkey, current_ru_hotkey, current_en_hotkey):
         super().__init__()
         self.current_ua_hotkey = current_ua_hotkey
         self.current_ru_hotkey = current_ru_hotkey
+        self.current_en_hotkey = current_en_hotkey
         self.new_ua_hotkey = current_ua_hotkey
         self.new_ru_hotkey = current_ru_hotkey
+        self.new_en_hotkey = current_en_hotkey
 
         # Define all instance attributes in __init__ with default values
         self.ua_input = None
         self.ru_input = None
+        self.en_input = None
 
         # Initialize UI
         self.init_ui()
@@ -469,6 +572,12 @@ class HotkeySettingsDialog(QDialog):
         layout.addWidget(self.ru_input)
         self.ru_input.keyPressEvent = self.capture_ru_key  # Override key press event
 
+        # English Hotkey
+        layout.addWidget(QLabel("Set English Transliteration Hotkey:"))
+        self.en_input = QLineEdit(self.current_en_hotkey)  # Show current hotkey
+        layout.addWidget(self.en_input)
+        self.en_input.keyPressEvent = self.capture_en_key  # Override key press event
+
         # Save and Cancel buttons
         save_btn = QPushButton("Save")
         save_btn.clicked.connect(self.accept)  # Close the dialog and save
@@ -484,7 +593,7 @@ class HotkeySettingsDialog(QDialog):
         """
         Capture key press events for Ukrainian transliteration hotkey input.
         """
-        text = self.get_pressed_key(event)
+        text = get_pressed_key(event)
         self.new_ua_hotkey = text
         self.ua_input.setText(text)
 
@@ -492,61 +601,17 @@ class HotkeySettingsDialog(QDialog):
         """
         Capture key press events for Russian transliteration hotkey input.
         """
-        text = self.get_pressed_key(event)
+        text = get_pressed_key(event)
         self.new_ru_hotkey = text
         self.ru_input.setText(text)
 
-    @staticmethod
-    def get_pressed_key(event):
+    def capture_en_key(self, event):
         """
-        Convert a PyQt Key Event into a string representing the hotkey.
+        Capture key press events for Russian transliteration hotkey input.
         """
-        modifiers = event.modifiers()
-        keys = []
-
-        # Handle modifiers
-        if modifiers & Qt.AltModifier:
-            keys.append('<alt>')
-        if modifiers & Qt.ControlModifier:
-            keys.append('<ctrl>')
-        if modifiers & Qt.ShiftModifier:
-            keys.append('<shift>')
-
-        # Handle special keys and textual keys
-        key = event.key()
-        if key in [
-            Qt.Key_Delete, Qt.Key_End, Qt.Key_Home, Qt.Key_Insert,
-            Qt.Key_PageUp, Qt.Key_PageDown, Qt.Key_Backspace, Qt.Key_Tab,
-            Qt.Key_Escape, Qt.Key_Space, Qt.Key_Enter, Qt.Key_Return
-        ]:
-            # Map special keys to their human-readable names
-            special_keys = {
-                Qt.Key_Delete: '<delete>',
-                Qt.Key_End: '<end>',
-                Qt.Key_Home: '<home>',
-                Qt.Key_Insert: '<insert>',
-                Qt.Key_PageUp: '<pageup>',
-                Qt.Key_PageDown: '<pagedown>',
-                Qt.Key_Backspace: '<backspace>',
-                Qt.Key_Tab: '<tab>',
-                Qt.Key_Escape: '<escape>',
-                Qt.Key_Space: '<space>',
-                Qt.Key_Enter: '<enter>',
-                Qt.Key_Return: '<return>',
-            }
-            keys.append(special_keys[key])
-        elif Qt.Key_F1 <= key <= Qt.Key_F35:
-            # Handle function keys (F1 to F35)
-            keys.append(f"f{key - Qt.Key_F1 + 1}")
-        elif Qt.Key_0 <= key <= Qt.Key_9 or Qt.Key_A <= key <= Qt.Key_Z:
-            # Handle alphanumeric keys
-            keys.append(event.text())
-        else:
-            # Fallback for unmapped keys (like Numpad keys)
-            keys.append(f"key_{key}")
-
-        # Return the hotkey combination as a string
-        return "+".join(keys).lower()
+        text = get_pressed_key(event)
+        self.new_en_hotkey = text
+        self.en_input.setText(text)
 
     def get_ua_hotkey(self):
         """
@@ -559,6 +624,12 @@ class HotkeySettingsDialog(QDialog):
         Return the new Russian hotkey.
         """
         return self.new_ru_hotkey
+
+    def get_en_hotkey(self):
+        """
+        Return the new English hotkey.
+        """
+        return self.new_en_hotkey
 
 
 if __name__ == "__main__":
