@@ -194,7 +194,7 @@ def transliterate_clipboard(lang="ukrainian"):
     pyperclip.copy(result)
     print(f"Text replaced with: {result}")
     # Simulate a paste using pynput
-    sleep(0.3)
+    sleep(0.5)
     with keyboard_controller.pressed(Key.ctrl):
         keyboard_controller.press('v')
         keyboard_controller.release('v')
@@ -284,9 +284,9 @@ def load_hotkeys() -> tuple[str, str, str]:
     if config.read(CONFIG_FILE) and 'Preferences' in config:
         ua_hotkey = config['Preferences'].get('ua_hotkey', '<alt>+<delete>')  # Default for Ukrainian
         ru_hotkey = config['Preferences'].get('ru_hotkey', '<alt>+<end>')  # Default for Russian
-        en_hotkey = config['Preferences'].get('en_hotkey', '<alt>+<page_down>')  # Default for english
+        en_hotkey = config['Preferences'].get('en_hotkey', '<alt>+<home>')  # Default for english
         return ua_hotkey, ru_hotkey, en_hotkey
-    return '<alt>+<delete>', '<alt>+<end>', '<alt>+<page_down>'  # Default hotkeys
+    return '<alt>+<delete>', '<alt>+<end>', '<alt>+<home>'  # Default hotkeys
 
 
 #     # Use translate to transform the input text
@@ -397,7 +397,7 @@ class TransliterationApp(QWidget):
         # Language Selection
         layout.addWidget(QLabel("Choose Target Language:"))
         self.language_selection = QComboBox()  # Initialize QComboBox
-        self.language_selection.addItems(["Ukrainian", "Russian"])
+        self.language_selection.addItems(["Ukrainian", "Russian", "English"])
         layout.addWidget(self.language_selection)
 
         # Output Text
