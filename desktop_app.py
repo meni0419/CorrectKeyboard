@@ -9,6 +9,8 @@ from PyQt5.QtGui import QIcon
 from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import QApplication, QWidget, QVBoxLayout, QLabel, QTextEdit, QPushButton, QComboBox, \
     QMessageBox, QHBoxLayout, QDialog, QLineEdit, QSystemTrayIcon, QMenu, QAction
+#import pyautogui
+
 
 LIGHT_THEME = """
 QWidget {
@@ -167,18 +169,19 @@ def transliterate_clipboard(lang="ukrainian"):
     Reads selected text from the clipboard, transliterates it,
     and replaces the selected text in the active application.
     """
-    keyboard_controller = Controller()
-
-    with keyboard_controller.pressed(Key.ctrl):
-        keyboard_controller.press('c')
-        keyboard_controller.release('c')
-
-    sleep(0.5)
+    # # Store original clipboard content
+    # original_clipboard = pyperclip.paste()
+    
+    # # Try to copy selected text using pyautogui
+    # pyautogui.hotkey('command', 'c')
+    # sleep(0.5)  # Increased delay
+    
+    # Get the copied text
     input_text = pyperclip.paste()
+    
+    # If nothing was copied or if we just copied 'c', try again
 
-    if not input_text.strip():
-        print("No text found in clipboard, nothing to transliterate!")
-        return
+    print(f"Input text captured: {input_text}")  # Debug logging
 
     # Transliterate the text
     if lang == "ukrainian":
@@ -188,16 +191,17 @@ def transliterate_clipboard(lang="ukrainian"):
     elif lang == "english":
         result = transliterate_en_text(input_text)
     else:
-        result = input_text  # Fallback to input text if language is unknown
+        result = input_text
 
     # Write transliterated text back to clipboard
     pyperclip.copy(result)
-    print(f"Text replaced with: {result}")
-    # Simulate a paste using pynput
-    sleep(0.3)
-    with keyboard_controller.pressed(Key.ctrl):
-        keyboard_controller.press('v')
-        keyboard_controller.release('v')
+    print(f"Text transliterated to: {result}")
+    
+    # Ensure the text is still selected and paste
+    # sleep(0.5)
+    # pyautogui.hotkey('command', 'v')
+    
+    # print("Paste operation completed")
 
 
 def get_pressed_key(event):
@@ -284,9 +288,9 @@ def load_hotkeys() -> tuple[str, str, str]:
     if config.read(CONFIG_FILE) and 'Preferences' in config:
         ua_hotkey = config['Preferences'].get('ua_hotkey', '<alt>+<delete>')  # Default for Ukrainian
         ru_hotkey = config['Preferences'].get('ru_hotkey', '<alt>+<end>')  # Default for Russian
-        en_hotkey = config['Preferences'].get('en_hotkey', '<alt>+<page_down>')  # Default for english
+        en_hotkey = config['Preferences'].get('en_hotkey', '<alt>+<home>')  # Default for english
         return ua_hotkey, ru_hotkey, en_hotkey
-    return '<alt>+<delete>', '<alt>+<end>', '<alt>+<page_down>'  # Default hotkeys
+    return '<alt>+<delete>', '<alt>+<end>', '<alt>+<home>'  # Default hotkeys
 
 
 #     # Use translate to transform the input text
@@ -505,7 +509,10 @@ class TransliterationApp(QWidget):
         Register or update hotkeys based on the current settings.
         """
         if self.hotkeys_listener:
-            self.hotkeys_listener.stop()  # Unregister existing hotkeys
+            try:
+                self.hotkeys_listener.stop()
+            except Exception:
+                pass
 
         # Validate and register hotkeys
         try:
@@ -523,10 +530,10 @@ class TransliterationApp(QWidget):
             # Provide default fallback hotkeys in case of failure
             self.ua_hotkey = '<alt>+<delete>'
             self.ru_hotkey = '<alt>+<end>'
-            self.en_hotkey = '<alt>+<page_down>'
+            self.en_hotkey = '<alt>+<home>'
 
             QMessageBox.information(self, "Fallback Hotkeys",
-                                    f"Fallback hotkeys applied.\nUkrainian: {self.ua_hotkey}\nRussian: {self.ru_hotkey}\nEnglish: {self.en_hotkey}")
+                                  f"Fallback hotkeys applied.\nUkrainian: {self.ua_hotkey}\nRussian: {self.ru_hotkey}\nEnglish: {self.en_hotkey}")
             self.register_hotkeys()
 
 
