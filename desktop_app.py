@@ -167,18 +167,18 @@ def transliterate_clipboard(lang="ukrainian"):
     Reads selected text from the clipboard, transliterates it,
     and replaces the selected text in the active application.
     """
-    keyboard_controller = Controller()
-
-    with keyboard_controller.pressed(Key.ctrl):
-        keyboard_controller.press('c')
-        keyboard_controller.release('c')
-
-    sleep(0.5)
+    # keyboard_controller = Controller()
+    #
+    # with keyboard_controller.pressed(Key.ctrl):
+    #     keyboard_controller.press('c')
+    #     keyboard_controller.release('c')
+    #
+    # sleep(0.5)
     input_text = pyperclip.paste()
-
-    if not input_text.strip():
-        print("No text found in clipboard, nothing to transliterate!")
-        return
+    #
+    # if not input_text.strip():
+    #     print("No text found in clipboard, nothing to transliterate!")
+    #     return
 
     # Transliterate the text
     if lang == "ukrainian":
@@ -194,10 +194,10 @@ def transliterate_clipboard(lang="ukrainian"):
     pyperclip.copy(result)
     print(f"Text replaced with: {result}")
     # Simulate a paste using pynput
-    sleep(0.5)
-    with keyboard_controller.pressed(Key.ctrl):
-        keyboard_controller.press('v')
-        keyboard_controller.release('v')
+    # sleep(0.5)
+    # with keyboard_controller.pressed(Key.ctrl):
+    #     keyboard_controller.press('v')
+    #     keyboard_controller.release('v')
 
 
 def get_pressed_key(event):
@@ -322,7 +322,7 @@ class TransliterationApp(QWidget):
         """
         # Create a system tray icon
         self.tray_icon = QSystemTrayIcon(self)
-        self.tray_icon.setIcon(QIcon('static/img/botico.png'))  # Use your custom icon here
+        self.tray_icon.setIcon(QIcon('static/img/botico.ico'))  # Use your custom icon here
         self.tray_icon.setToolTip("Transliteration App")
 
         # Create a menu for system tray icon
@@ -371,7 +371,7 @@ class TransliterationApp(QWidget):
 
     def init_ui(self):
         self.setWindowTitle("Transliteration App")
-        self.setWindowIcon(QIcon('static/img/botico.png'))
+        self.setWindowIcon(QIcon('static/img/botico.ico'))
         self.setGeometry(300, 300, 400, 300)
 
         # Layout

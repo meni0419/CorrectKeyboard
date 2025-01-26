@@ -5,7 +5,7 @@ a = Analysis(
     ['desktop_app.py'],
     pathex=[],
     binaries=[],
-    datas=[],
+    datas=[('static/img/botico.ico', '.')],
     hiddenimports=[],
     hookspath=[],
     hooksconfig={},
@@ -35,4 +35,5 @@ exe = EXE(
     target_arch=None,
     codesign_identity=None,
     entitlements_file=None,
+    icon=['static\\img\\botico.ico'],
 )
